@@ -20,7 +20,7 @@ function buildmaps(state, parameters)
     mapx, mapy = build_xygrid(xmin, xmax, ymin, ymax, modelproj, mapproj; dr=20e3)
     mapxy_grid = permutedims(densify(mapx, mapy))
 
-    buildbasemapfiles(resdir(scenario), basemapdir(), paths, mapproj; overwrite=false)
+    buildbasemapfiles(scenario, basemapdir(), paths, mapproj; overwrite=false)
 
     if truthfcn
         if :patch in keys(params)

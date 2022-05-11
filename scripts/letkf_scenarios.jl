@@ -1,9 +1,9 @@
 import Imaging
 using Imaging: common_simulation, buildpaths,
     buildmaps, buildeppmaps, map_labelled, ensembleestimate, plotensemble,
-    buildionoprofile, plotprofiles, residuals, plotresiduals
+    buildionoprofile, plotprofiles, residuals, plotresiduals, resdir, resdir!
 using Dates, Printf
-using Parameters, JLD2, ScatteredInterpolation
+using Parameters, JLD2, ScatteredInterpolation, Proj4
 using SubionosphericVLFInversionAlgorithms, LMPTools
 
 include("truth_scenarios.jl")
@@ -122,13 +122,13 @@ function runandplotfullday(scenarios, letkffcn, force=false)
         # Skip running LETKF if it's already been run
         if force || !isfile(joinpath(resdir(scenario), scenario*".jld2"))
             try
-                runletkf(params)
+                Imaging.runletkf(params)
             catch e
-                @error e
+                error(e)
                 nothing
             end
         end
-
+        
         state, data = load(joinpath(resdir(scenario), scenario*".jld2"), "state", "data")
         buildmaps(state, params)
         if :hbfcn in keys(params())
@@ -230,12 +230,12 @@ function runandplotfulldayepp(scenarios, letkffcn, epp, force=false; hBbB=nothin
         if force || !isfile(joinpath(resdir(scenario), scenario*".jld2"))
             try
                 if isnothing(b0)
-                    runletkf(params)
+                    Imaging.runletkf(params)
                 else
-                    runletkf_honly(params, b0)
+                    Imaging.runletkf_honly(params, b0)
                 end
             catch e
-                @error e
+                error(e)
                 nothing
             end
         end
@@ -282,10 +282,10 @@ end
 # runandplotfullday((day1, waitday1), letkf1)
 
 # No EPP, realistic nighttime ionosphere
-# runandplotfullday((night1,), letkf1)
+runandplotfullday((night1,), letkf1)
 
 # EPP scenarios with realistic daytime ionosphere
-# runandplotfulldayepp((day1,), letkf1, eppa)
+runandplotfulldayepp((day1,), letkf1, eppa)
 # runandplotfulldayepp((day1,), letkf1, eppb)
 # runandplotfulldayepp((day1,), letkf1, eppc)
 # runandplotfulldayepp((day1,), letkf1, eppd)
