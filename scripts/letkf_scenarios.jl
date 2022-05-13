@@ -2,7 +2,7 @@ import Imaging
 using Imaging: common_simulation, buildpaths,
     buildmaps, buildeppmaps, map_labelled, ensembleestimate, plotensemble,
     buildionoprofile, plotprofiles, residuals, plotresiduals, resdir, resdir!
-using Dates, Printf
+using Dates, Printf, Statistics
 using Parameters, JLD2, ScatteredInterpolation, Proj4
 using SubionosphericVLFInversionAlgorithms, LMPTools
 
@@ -200,6 +200,7 @@ function runandplotfulldayepp(scenarios, letkffcn, epp, force=false; hBbB=nothin
         end        
 
         # Load prior from background estimate
+        isfile(joinpath(resdir(backgroundscenario), backgroundscenario*".jld2")) || error(resdir(backgroundscenario*".jld2")*" not found. Has this background scenario been run?")
         state = load(joinpath(resdir(backgroundscenario), backgroundscenario*".jld2"), "state")
         tmax = maximum(state.t)
         while all(isnan, state(:h)(t=tmax))
@@ -229,11 +230,7 @@ function runandplotfulldayepp(scenarios, letkffcn, epp, force=false; hBbB=nothin
         # Skip running LETKF if it's already been run
         if force || !isfile(joinpath(resdir(scenario), scenario*".jld2"))
             try
-                if isnothing(b0)
-                    Imaging.runletkf(params)
-                else
-                    Imaging.runletkf_honly(params, b0)
-                end
+                Imaging.runletkf(params)
             catch e
                 error(e)
                 nothing
@@ -280,12 +277,13 @@ end
 
 # No EPP, Wait and Spies and realistic daytime ionospheres
 # runandplotfullday((day1, waitday1), letkf1)
+# runandplotfullday((day1,), letkf1)
 
 # No EPP, realistic nighttime ionosphere
-runandplotfullday((night1,), letkf1)
+# runandplotfullday((night1,), letkf1)
 
 # EPP scenarios with realistic daytime ionosphere
-runandplotfulldayepp((day1,), letkf1, eppa)
+# runandplotfulldayepp((day1,), letkf1, eppa)
 # runandplotfulldayepp((day1,), letkf1, eppb)
 # runandplotfulldayepp((day1,), letkf1, eppc)
 # runandplotfulldayepp((day1,), letkf1, eppd)
