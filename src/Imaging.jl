@@ -7,14 +7,15 @@ using Proj4, Contour, GeoStats, ScatteredInterpolation
 using LongwaveModePropagator
 using LongwaveModePropagator: QE, ME, waitsparameter
 
-# Unregistered packages (Pkg.add these with their Github URL in the order here)
-using GeographicLib
-using EPPIonization
-using PropagationModelPrep, LMPTools, SubionosphericVLFInversionAlgorithms
+# Unregistered packages. Install in this order.
+# EPPIonization has a dependency on GPILowerIonosphere, which is not publically available.
+using GeographicLib  # using Pkg; Pkg.add("https://github.com/anowacki/GeographicLib.jl")
+using EPPIonization  # Pkg.add("https://github.com/fgasdia/EPPIonization.jl")
+using PropagationModelPrep  # Pkg.add("https://github.com/fgasdia/PropagationModelPrep")
+using LMPTools  # Pkg.add("https://github.com/fgasdia/LMPTools.jl")
+using SubionosphericVLFInversionAlgorithms  # Pkg.add("https://github.com/fgasdia/SubionosphericVLFInversionAlgorithms.jl")
 import SubionosphericVLFInversionAlgorithms as SIA
 
-# using Random, Printf, Statistics
-# using GPI, FIRITools
 
 # Path at which to write output.
 const RESDIR = Ref(normpath(joinpath(@__DIR__, "..", "results")))
@@ -37,13 +38,5 @@ include("plots_base.jl")
 include("letkf_plots.jl")
 
 include("letkf.jl")
-
-# TEMP! FOR DEVELOPMENT ONLY
-# export all functions
-# for n in names(@__MODULE__; all=true)
-#     if Base.isidentifier(n) && n ∉ (Symbol(@__MODULE__), :eval, :include)
-#         @eval export $n
-#     end
-# end
 
 end  # module

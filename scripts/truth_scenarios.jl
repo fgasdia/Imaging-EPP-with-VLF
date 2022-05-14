@@ -2,8 +2,8 @@ import Imaging
 using Dates
 using LMPTools
 
-# NOT a public repository. Contact forrest.gasdia@colorado.edu for further information.
-# GPI, an EPPIonization dependency, is also NOT a public repository.
+# GPI, an EPPIonization dependency, is NOT a public repository.
+# Contact forrest.gasdia@colorado.edu for further information.
 using EPPIonization
 
 ########
