@@ -1,14 +1,14 @@
 using Imaging
 using Imaging: buildpaths, segmentediono, GaussianRegion
 using Dates, DelimitedFiles, Printf, Statistics
-using Parameters, JLD2, Proj4, ProgressMeter
+using Parameters, JLD2, Proj, ProgressMeter
 using LongwaveModePropagator
 using LMPTools
 import SubionosphericVLFInversionAlgorithms as SIA
 
 include("truth_scenarios.jl")
 
-resdir!("results")
+resdir!(joinpath(resdir(), "scripts", "results-v0.2"))
 
 function fluxpath(wpts, patch)
     fluxes = Vector{Float64}(undef, length(wpts))
@@ -59,8 +59,8 @@ function fluxampphase(tx, rx, background, epp, fluxes, βs; force=false)
                 fullmat[2:end,aidx] = a
                 fullmat[2:end,pidx] = rad2deg.(mod2pi.(p))
             end
-            sname = resdir(@sprintf("epp_ampphase_%s_%d.gp.csv", dt, βs[j]/1e3))
-            sname = replace(sname, ":"=>"-")
+            fname = @sprintf("epp_ampphase_%s_%d.gp.csv", dt, βs[j]/1e3)
+            sname = resdir(replace(fname, ":"=>"-"))
             writedlm(sname, fullmat, ',')
         end
     end
@@ -79,8 +79,8 @@ mat[1,:] .= ("dist", "a", "p")
 mat[2:end,1] .= gs.distance/1e3
 mat[2:end,2] .= a
 mat[2:end,3] .= rad2deg.(mod2pi.(p))
-sname = resdir("epp_ampphase_"*string(day1().dt)*"_0.gp.csv")
-sname = replace(sname, ":"=>"-")
+fname = "epp_ampphase_"*string(day1().dt)*"_0.gp.csv"
+sname = resdir(replace(fname, ":"=>"-"))
 writedlm(sname, mat, ',')
 
 
@@ -92,6 +92,6 @@ mat[1,:] .= ("dist", "a", "p")
 mat[2:end,1] .= gs.distance/1e3
 mat[2:end,2] .= a
 mat[2:end,3] .= rad2deg.(mod2pi.(p))
-sname = resdir("epp_ampphase_"*string(night1().dt)*"_0.gp.csv")
-sname = replace(sname, ":"=>"-")
+fname = "epp_ampphase_"*string(night1().dt)*"_0.gp.csv"
+sname = resdir(replace(fname, ":"=>"-"))
 writedlm(sname, mat, ',')

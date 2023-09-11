@@ -36,10 +36,11 @@ function buildmaps(state, parameters)
         end
     end
 
-    ctrlpts = permutedims(itp.coords)
+    ctrlpts = [(v[1], v[2]) for v in eachcol(itp.coords)]
 
-    # Convert WGS84 range of 1200km to equivalent grid distance 
-    lonlat = permutedims(transform(modelproj, wgs84(), ctrlpts))
+    # Convert WGS84 range of 1200km to equivalent grid distance
+    trans = Proj.Transformation(modelproj, wgs84())
+    lonlat = trans.(ctrlpts)
     truedr = mediandr(lonlat)
     modelprojscalar = dr/truedr
 
@@ -48,6 +49,11 @@ function buildmaps(state, parameters)
     # the variogram range is often close to the average size of physical anomalies
     varmap = krigingmask(itp, paths, mapproj, mapx, mapy; pathstep, range=600e3*modelprojscalar)
     varmask = replace(x->x > 0.2^2 ? NaN : 1.0, varmap)
+
+    # @info varmap
+    @info minimum(varmap)
+    @info maximum(varmap)
+    @info mean(varmap)
 
     for t = 0:ntimes
         hprimes = dropdims(mean(state(:h)(t=t); dims=:ens); dims=:ens)
@@ -95,7 +101,8 @@ function buildmaps(state, parameters)
             writedlm(joinpath(resdir(scenario), "maps_$(t).gp.csv"), mat, ',')
         end
 
-        t_ctrlpts = transform(modelproj, mapproj, ctrlpts)
+        maptrans = Proj.Transformation(modelproj, mapproj)
+        t_ctrlpts = maptrans.(ctrlpts)
         writedlm(joinpath(resdir(scenario), "ctrlpts_$(t).gp.csv"), t_ctrlpts, ',')
     end
     return varmap
@@ -142,11 +149,13 @@ function ensembleerror(state, xycoords, parameters)
     xh = -20:0.01:20
     xb = -0.5:0.001:0.5
 
+    trans = Proj.Transformation(modelproj, wgs84())
+
     open(joinpath(scenario, "hens_gaus.csv"), "w") do g
     open(joinpath(scenario, "hens.csv"), "w") do f
         for (xc, yc) in xycoords
-            xy_grid = collect(densify(xc, yc))
-            lola = permutedims(transform(modelproj, wgs84(), permutedims(xy_grid)))
+            xy_grid = densify(xc, yc)
+            lola = trans.(parent(parent(xy_grid)))
             @info lola
             
             trueh = truthfcn(lola[1], lola[2], dt)[1]
@@ -171,8 +180,8 @@ function ensembleerror(state, xycoords, parameters)
     open(joinpath(scenario, "bens_gaus.csv"), "w") do g
     open(joinpath(scenario, "bens.csv"), "w") do f
         for (xc, yc) in xycoords
-            xy_grid = collect(densify(xc, yc))
-            lola = permutedims(transform(modelproj, wgs84(), permutedims(xy_grid)))
+            xy_grid = densify(xc, yc)
+            lola = trans.(parent(parent(xy_grid)))
             
             trueb = truthfcn(lola[1], lola[2], dt)[2]
             xerr = state(y=yc,x=xc) .- trueb
@@ -194,7 +203,8 @@ function ensembleerror(state, xycoords, parameters)
     end
 
     mapproj = epsg_102002()
-    t_xycoords = transform(modelproj, mapproj, [getindex.(xycoords,1) getindex.(xycoords,2)])
+    maptrans = Proj.Transformation(modelproj, mapproj)
+    t_xycoords = maptrans.(xycoords)
     mat = Matrix{Any}(undef, length(xycoords)+1, 3)
     mat[1,:] .= ("i", "x", "y")
     mat[2:end,1] .= collect(1:length(xycoords))
@@ -215,11 +225,13 @@ function ensembleestimate(state, xycoords, parameters)
     xh = 50:0.01:100
     xb = 0.1:0.001:2.0
 
+    trans = Proj.Transformation(modelproj, wgs84())
+
     open(joinpath(resdir(scenario), "hens_gaus.csv"), "w") do g
     open(joinpath(resdir(scenario), "hens.csv"), "w") do f
         for (xc, yc) in xycoords
-            xy_grid = collect(densify(xc, yc))
-            lola = permutedims(transform(modelproj, wgs84(), permutedims(xy_grid)))
+            xy_grid = densify(xc, yc)
+            lola = trans.(parent(parent(xy_grid)))
             @info lola
             
             x = state(y=yc,x=xc)
@@ -262,7 +274,8 @@ function ensembleestimate(state, xycoords, parameters)
     end
 
     mapproj = epsg_102002()
-    t_xycoords = transform(modelproj, mapproj, [getindex.(xycoords,1) getindex.(xycoords,2)])
+    maptrans = Proj.Transformation(modelproj, mapproj)
+    t_xycoords = maptrans.(xycoords)
     mat = Matrix{Any}(undef, length(xycoords)+1, 3)
     mat[1,:] .= ("i", "x", "y")
     mat[2:end,1] .= collect(1:length(xycoords))
@@ -302,18 +315,16 @@ Return electron density and neutral species density profiles as a function of `z
 Usually used for plotting ionosphere profile.
 """
 function ionoprofile(lat, lon, dt, patch=nothing, ee=nothing; z=0:110)
-    wdcpath = joinpath(@__DIR__, "..", "wdc")
-
     if !isnothing(patch) && !isnothing(ee)
         flux = patch(lon, lat)
-        background, perturbed = chargeprofiles(flux, lat, lon, ee, z, dt; datafilepath=wdcpath)
+        background, perturbed = chargeprofiles(flux, lat, lon, ee, z, dt)
         n1 = Interpolations.interpolate(z, perturbed[:,1], FritschButlandMonotonicInterpolation())
         n2 = Interpolations.interpolate(z, perturbed[:,2], FritschButlandMonotonicInterpolation())
         n3 = Interpolations.interpolate(z, perturbed[:,3], FritschButlandMonotonicInterpolation())
         n4 = Interpolations.interpolate(z, perturbed[:,4], FritschButlandMonotonicInterpolation())
         n5 = Interpolations.interpolate(z, perturbed[:,5], FritschButlandMonotonicInterpolation())
     else
-        background = chargeprofiles(lat, lon, z, dt; datafilepath=wdcpath)
+        background = chargeprofiles(lat, lon, z, dt)
         n1 = Interpolations.interpolate(z, background[:,1], FritschButlandMonotonicInterpolation())
         n2 = Interpolations.interpolate(z, background[:,2], FritschButlandMonotonicInterpolation())
         n3 = Interpolations.interpolate(z, background[:,3], FritschButlandMonotonicInterpolation())
@@ -356,8 +367,8 @@ function buildionoprofile(state, xycoords, parameters)
     end
 
     # ionoprofile needs lat/lon (not y,x)
-    lola = permutedims(transform(common_simulation().modelproj, wgs84(),
-        permutedims(reinterpret(reshape, Float64, xycoords))))
+    trans = Proj.Transformation(common_simulation().modelproj, wgs84())
+    lola = trans.(xycoords)
 
     hbmat = Matrix{Any}(undef, 1+length(xycoords), 2)
     hbmat[1,:] .= ("h", "b")
@@ -379,9 +390,9 @@ function buildionoprofile(state, xycoords, parameters)
         mat[2:end,wrcol] .= get_Wr_height(only(h), only(b); zs)/1000 # convert to km
 
         if waittruth
-            truthprofile = waitprofile.(zs, totalhb(lola[1,i], lola[2,i], dt)...)
+            truthprofile = waitprofile.(zs, totalhb(lola[i][1], lola[i][2], dt)...)
         else
-            n1, n2, n3, n4, n5 = ionoprofile(lola[2,i], lola[1,i], dt, patch, ee; z=alt)
+            n1, n2, n3, n4, n5 = ionoprofile(lola[i][2], lola[i][1], dt, patch, ee; z=alt)
             truthprofile = n1.(alt)
         end
 

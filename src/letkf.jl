@@ -12,8 +12,9 @@ function runletkf(parameters)
     
     CI = CartesianIndices(gridshape)
 
-    xy_grid = collect(densify(x_grid, y_grid))
-    lola = permutedims(transform(modelproj, wgs84(), permutedims(xy_grid)))
+    xy_grid = densify(x_grid, y_grid)
+    trans = Proj.Transformation(modelproj, wgs84())
+    lola = trans.(parent(parent(xy_grid)))
 
     distarr = lonlatgrid_dists(lola)
     gc = gaspari1999_410(distarr, compactlengthscale(lengthscale))

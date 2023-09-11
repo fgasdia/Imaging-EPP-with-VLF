@@ -1,5 +1,6 @@
 # Canada Lambert Conformal Conic, for plotting
-epsg_102002() = Projection("+proj=lcc +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs")
+# epsg_102002() = "+proj=lcc +lat_1=50 +lat_2=70 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
+epsg_102002() = "ESRI:102002"
 
 function basemapdir()
     if Sys.iswindows()
@@ -160,13 +161,15 @@ function buildbasemapfiles(scenario, basemapdir, paths, mapproj; overwrite=false
     transmitters = unique(getindex.(paths, 1))
     receivers = unique(getindex.(paths, 2))
 
-    t_transmitters = transform(wgs84(), mapproj, [getfield.(transmitters, :longitude) getfield.(transmitters, :latitude)])
-    t_receivers = transform(wgs84(), mapproj, [getfield.(receivers, :longitude) getfield.(receivers, :latitude)])
+    maptrans = Proj.Transformation(wgs84(), mapproj)
+    t_transmitters = maptrans.([(tx.longitude, tx.latitude) for tx in transmitters])
+    t_receivers = maptrans.([(rx.longitude, rx.latitude) for rx in receivers])
 
-    t_gcp = Vector{Matrix{Float64}}(undef, length(paths))
+    t_gcp = Vector{Vector{Tuple{Float64, Float64}}}(undef, length(paths))
     for i in eachindex(paths)
         _, gcp_wpts = SIA.pathpts(paths[i][1], paths[i][2]; dist=25e3)
-        t_gcp_wpts = transform(wgs84(), mapproj, [getfield.(gcp_wpts, :lon) getfield.(gcp_wpts, :lat)])
+        lola = [(w.lon, w.lat) for w in gcp_wpts]
+        t_gcp_wpts = maptrans.(lola)
         t_gcp[i] = t_gcp_wpts
     end
 
@@ -191,12 +194,13 @@ Compute dense map of `values` on a dense grid of `mapx`, `mapy` defined on the p
 function buildmapfile(itp::ScatteredInterpolant, values, mapproj, mapx, mapy)
     vitp = ScatteredInterpolation.interpolate(itp.method, itp.coords, filter(!isnan, values))
 
-    mapxy = permutedims(densify(mapx, mapy))  # n × 2
-    pts = permutedims(transform(mapproj, itp.projection, mapxy))
+    mapxy = densify(mapx, mapy)  # n × 2
+    maptrans = Proj.Transformation(mapproj, itp.projection)
+    pts = PointSet(maptrans.(parent(parent(mapxy))))
 
     vmap = Matrix{Float64}(undef, length(mapy), length(mapx))
-    for i in axes(pts,2)
-        vmap[i] = only(ScatteredInterpolation.evaluate(vitp, pts[:,i]))
+    for i in eachindex(pts)
+        vmap[i] = only(ScatteredInterpolation.evaluate(vitp, pts[i].coords))
     end
 
     return vmap
@@ -205,29 +209,31 @@ end
 function buildmapfile(itp::GeoStatsInterpolant, values, mapproj, mapx, mapy)
     geox = georef((v=vec(values),), PointSet(itp.coords))
 
-    mapxy = permutedims(densify(mapx, mapy))  # n × 2
-    pts = permutedims(transform(mapproj, itp.projection, mapxy))
+    mapxy = densify(mapx, mapy)  # n × 2
+    maptrans = Proj.Transformation(mapproj, itp.projection)
+    pts = maptrans.(parent(parent(mapxy)))
 
     problem = EstimationProblem(geox, PointSet(pts), :v)
     solution = solve(problem, itp.method)
 
     vmap = Matrix{Float64}(undef, length(mapy), length(mapx))
-    for i in axes(pts,2)
-        vmap[i] = solution[:v][i]
+    for i in eachindex(pts)
+        vmap[i] = solution.v[i]
     end
 
     return vmap
 end
 
 function buildmapfiles(hbfcn, datetime, mapproj, mapx, mapy)
-    mapxy = permutedims(densify(mapx, mapy))  # n × 2
-    lola = permutedims(transform(mapproj, wgs84(), mapxy))
+    mapxy = densify(mapx, mapy)  # n × 2
+    maptrans = Proj.Transformation(mapproj, wgs84())
+    lola = maptrans.(parent(parent(mapxy)))
 
     hmap = Matrix{Float64}(undef, length(mapy), length(mapx))
     bmap = similar(hmap)
 
-    for i in axes(lola,2)
-        h, b = hbfcn(lola[1,i], lola[2,i], datetime)
+    for i in eachindex(lola)
+        h, b = hbfcn(lola[i][1], lola[i][2], datetime)
         hmap[i] = h
         bmap[i] = b
     end
@@ -271,10 +277,11 @@ function buildtruthmaps(parameters)
     end
     htrue, btrue = buildmapfiles(totalhb, dt, mapproj, mapx, mapy)
 
-    ctrlpts = permutedims(itp.coords)
+    ctrlpts = [(v[1], v[2]) for v in eachcol(itp.coords)]
 
     # Convert WGS84 range of 1200km to equivalent grid distance 
-    lonlat = permutedims(transform(modelproj, wgs84(), ctrlpts))
+    trans = Proj.Transformation(modelproj, wgs84())
+    lonlat = trans.(ctrlpts)
     truedr = mediandr(lonlat)
     modelprojscalar = dr/truedr
 
@@ -293,7 +300,8 @@ function buildtruthmaps(parameters)
     mat[2:end,:] .= [mapxy_grid[:,1] mapxy_grid[:,2] vec(htrue) vec(btrue)]
     writedlm(joinpath(resdir(scenario), "maps_$t.gp.csv"), mat, ',')
 
-    t_ctrlpts = transform(modelproj, mapproj, ctrlpts)
+    maptrans = Proj.Transformation(modelproj, mapproj)
+    t_ctrlpts = maptrans.(ctrlpts)
     writedlm(joinpath(resdir(scenario), "ctrlpts_$t.gp.csv"), t_ctrlpts, ',')
 end
 
@@ -310,17 +318,18 @@ function buildeppmaps(parameters; modelstepindex=1)
     xy_grid = densify(x_grid, y_grid)
     (xmin, xmax), (ymin, ymax) = extrema(xy_grid; dims=2)
     mapx, mapy = build_xygrid(xmin, xmax, ymin, ymax, modelproj, mapproj; dr=20e3)
-    mapxy_grid = permutedims(densify(mapx, mapy))
+    mapxy_grid = densify(mapx, mapy)
 
     # densexy_grid = permutedims(transform(mapproj, modelproj, mapxy_grid))
-    densexy_grid = permutedims(transform(mapproj, wgs84(), mapxy_grid))
+    maptrans = Proj.Transformation(mapproj, wgs84())
+    densexy_grid = maptrans.(mapxy_grid)
 
     buildbasemapfiles(scenario, basemapdir(), paths, mapproj; overwrite=false)
 
     # NOTE TEMP: We're taking log, but we can potentially to a special log plot instead
     fluxmap = Matrix{Float64}(undef, length(mapy), length(mapx))
-    for i in axes(densexy_grid,2)
-        flux = patch(densexy_grid[1,i], densexy_grid[2,i])
+    for i in eachindex(densexy_grid)
+        flux = patch(densexy_grid[i]...)
         fluxmap[i] = log10(flux)
     end
 
@@ -381,10 +390,8 @@ function krigingmask(itp, paths, mapproj, mapx, mapy; pathstep=100e3, range=600e
     # (otherwise GeoStats doesn't work)
     uidx = unique(x->allwpts[x], 1:length(allwpts))
 
-    wptpts = PointSet(permutedims(
-            transform(wgs84(), itp.projection, permutedims(reshape(reinterpret(Float64, allwpts[uidx]),2,:)))
-        )
-    )  # in model proj
+    trans = Proj.Transformation(wgs84(), itp.projection)
+    wptpts = PointSet(trans.(allwpts[uidx]))  # in model proj
 
     # weights (more samples at same point has more weight)
     # f = Vector{Float64}(undef, length(uidx))
@@ -394,17 +401,19 @@ function krigingmask(itp, paths, mapproj, mapx, mapy; pathstep=100e3, range=600e
 
     # GeoStats problem setup in model proj
     # geox = georef((f=f,), wptpts)
-    geox = georef((f=zeros(length(uidx)),), wptpts)
-    solver = Kriging(:f => (variogram=GaussianVariogram(range=range, sill=1.0), degree=0),)
+    geox = georef((f=zeros(length(wptpts)),), wptpts)
+    solver = Kriging(:f => (variogram=GaussianVariogram(range=range, sill=1.0), degree=0))
 
-    mapxy = permutedims(densify(mapx, mapy))  # n × 2
-    pts = permutedims(transform(mapproj, itp.projection, mapxy))
-    problem = EstimationProblem(geox, PointSet(pts), (:f,))
+    mapxy = densify(mapx, mapy)  # n × 2
+    maptrans = Proj.Transformation(mapproj, itp.projection)
+    pts = maptrans.(parent(parent(mapxy)))
+    problem = EstimationProblem(geox, PointSet(pts), :f)
     solution = solve(problem, solver)
+    # XXX This solution is broken - returning all NaN
 
     varmap = Matrix{Float64}(undef, length(mapy), length(mapx))
-    for i in eachindex(varmap)
-        varmap[i] = solution[:f_variance][i]
+    for i in eachindex(varmap, solution.f_variance)
+        varmap[i] = solution.f_variance[i]
     end
 
     return varmap

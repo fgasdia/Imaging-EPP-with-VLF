@@ -3,12 +3,12 @@ using Imaging: common_simulation, buildpaths,
     buildmaps, buildeppmaps, map_labelled, ensembleestimate, plotensemble,
     buildionoprofile, plotprofiles, residuals, plotresiduals, resdir, resdir!
 using Dates, Printf, Statistics
-using Parameters, JLD2, ScatteredInterpolation, Proj4
+using Parameters, JLD2, ScatteredInterpolation, Proj
 using SubionosphericVLFInversionAlgorithms, LMPTools
 
 include("truth_scenarios.jl")
-resdir!("results")
-
+# resdir!("results")
+resdir!(joinpath(pkgdir(Imaging), "scripts", "results-v0.2"))
 
 """
     letkf1(background, prior=nothing)
@@ -29,8 +29,8 @@ function letkf1(background, prior=nothing)
     @unpack west, east, south, north, modelproj = common_simulation()
     @unpack dt = background()
 
-    ens_size = 100
-    ntimes = 6
+    ens_size = 50  # XXX TEMP 100
+    ntimes = 1  # XXX TEMP 6
 
     numexe = 8
     datatypes = (:amp, :phase)
@@ -41,8 +41,10 @@ function letkf1(background, prior=nothing)
     modelsteps = ((;dr, lengthscale),)
 
     x_grid, y_grid = build_xygrid(west, east, south, north, wgs84(), modelproj; dr)
-    xy_grid = collect(densify(x_grid, y_grid))
-    lola = permutedims(transform(modelproj, wgs84(), permutedims(xy_grid)))
+    xy_grid = densify(x_grid, y_grid)
+
+    trans = Proj.Transformation(modelproj, wgs84())
+    lola = trans.(parent(parent(xy_grid)))  # undo reshape reinterpret to get vector of tuples
 
     paths = buildpaths()
     localization = obs2grid_distance(lola, paths; r=lengthscale)
@@ -52,12 +54,12 @@ function letkf1(background, prior=nothing)
     itppts = build_xygrid(anylocal(localization), x_grid, y_grid)
     itp = ScatteredInterpolant(GeneralizedPolyharmonic(1,1), modelproj, itppts)
 
-    ncells = size(lola, 2)
+    ncells = length(lola)
     if isnothing(prior)
         hB = fill(2, ncells)  # σ_h′
         bB = fill(0.04, ncells)  # σ_β
 
-        hb0 = [ferguson(lola[2,i], zenithangle(lola[2,i], lola[1,i], dt), dt) for i in axes(lola,2)]
+        hb0 = [ferguson(ll[2], zenithangle(ll[2], ll[1], dt), dt) for ll in lola]
         h0 = getindex.(hb0, 1)
         b0 = getindex.(hb0, 2)
     else
@@ -276,7 +278,7 @@ end
 # code repositories. These functions cannot be run as-is on general installs.
 
 # No EPP, Wait and Spies and realistic daytime ionospheres
-# runandplotfullday((day1, waitday1), letkf1)
+runandplotfullday((day1, waitday1), letkf1)
 # runandplotfullday((day1,), letkf1)
 
 # No EPP, realistic nighttime ionosphere

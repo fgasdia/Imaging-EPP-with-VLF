@@ -51,8 +51,9 @@ end
 ))
 
 function localize!(v, x_grid, y_grid, localizationfcn, modelproj)
-    xy_grid = collect(densify(x_grid, y_grid))
-    lola = permutedims(transform(modelproj, wgs84(), permutedims(xy_grid)))
+    xy_grid = densify(x_grid, y_grid)
+    trans = Proj.Transformation(modelproj, wgs84())
+    lola = trans.(parent(parent(xy_grid)))
     locmask = localizationfcn(lola)
 
     v[.!locmask] .= NaN
@@ -227,8 +228,6 @@ function segmentediono(tx, rx, gs, dt::DateTime, patch=nothing, ee=nothing; elon
         wvgs = Vector{HomogeneousWaveguide{NTuple{5, Species}}}(undef, length(wpts))
     end
 
-    wdcpath = joinpath(@__DIR__, "..", "wdc")
-
     for i in eachindex(wpts)
         wpt = wpts[i]
         
@@ -237,14 +236,14 @@ function segmentediono(tx, rx, gs, dt::DateTime, patch=nothing, ee=nothing; elon
 
         if !isnothing(patch) && !isnothing(ee)
             flux = patch(wpt.lon, wpt.lat)
-            background, perturbed = chargeprofiles(flux, wpt.lat, wpt.lon, ee, z, dt; datafilepath=wdcpath)
+            background, perturbed = chargeprofiles(flux, wpt.lat, wpt.lon, ee, z, dt)
             n1 = Interpolations.interpolate(h, perturbed[:,1], FritschButlandMonotonicInterpolation())
             n2 = Interpolations.interpolate(h, perturbed[:,2], FritschButlandMonotonicInterpolation())
             n3 = Interpolations.interpolate(h, perturbed[:,3], FritschButlandMonotonicInterpolation())
             n4 = Interpolations.interpolate(h, perturbed[:,4], FritschButlandMonotonicInterpolation())
             n5 = Interpolations.interpolate(h, perturbed[:,5], FritschButlandMonotonicInterpolation())
         else
-            background = chargeprofiles(wpt.lat, wpt.lon, z, dt; datafilepath=wdcpath)
+            background = chargeprofiles(wpt.lat, wpt.lon, z, dt)
             n1 = Interpolations.interpolate(h, background[:,1], FritschButlandMonotonicInterpolation())
             n2 = Interpolations.interpolate(h, background[:,2], FritschButlandMonotonicInterpolation())
             n3 = Interpolations.interpolate(h, background[:,3], FritschButlandMonotonicInterpolation())

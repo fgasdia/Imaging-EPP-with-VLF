@@ -3,7 +3,7 @@ module Imaging
 using Dates, DelimitedFiles, LinearAlgebra
 using StableRNGs, Parameters, Distributions, JLD2
 using AxisKeys, ProgressMeter, Interpolations
-using Proj4, Contour, GeoStats, ScatteredInterpolation
+using Proj, Contour, GeoStats, ScatteredInterpolation
 using LongwaveModePropagator
 using LongwaveModePropagator: QE, ME, waitsparameter
 
@@ -18,15 +18,18 @@ import SubionosphericVLFInversionAlgorithms as SIA
 
 
 # Path at which to write output.
-const RESDIR = Ref(normpath(joinpath(@__DIR__, "..", "results")))
+const RESDIR = Ref(abspath(joinpath(@__DIR__, "..", "results")))
 resdir() = RESDIR[]
 resdir(d) = joinpath(resdir(), d)
-resdir!(d) = isdir(d) ? RESDIR[] = d : throw(ArgumentError("`d` must be a directory"))
+resdir!(d) = isdir(d) ? RESDIR[] = d : throw(ArgumentError("$(abspath(d)) must be a directory"))
+resdir!() = RESDIR[] = normpath(joinpath(@__DIR__, ".."))
 
 "LWPC sometimes fails with low β. Clip the minimum β value to forward models at MIN_BETA."
 const MIN_BETA = 0.22
 "Sets size of simulated data - effectively sets the maximum number of LETKF iterations."
 const DATALENGTH = 10
+
+export resdir, resdir!
 
 # consistent random numbers across Julia versions
 reset_rng() = StableRNG(1234)
