@@ -50,11 +50,6 @@ function buildmaps(state, parameters)
     varmap = krigingmask(itp, paths, mapproj, mapx, mapy; pathstep, range=600e3*modelprojscalar)
     varmask = replace(x->x > 0.2^2 ? NaN : 1.0, varmap)
 
-    # @info varmap
-    @info minimum(varmap)
-    @info maximum(varmap)
-    @info mean(varmap)
-
     for t = 0:ntimes
         hprimes = dropdims(mean(state(:h)(t=t); dims=:ens); dims=:ens)
         betas = dropdims(mean(state(:b)(t=t); dims=:ens); dims=:ens)

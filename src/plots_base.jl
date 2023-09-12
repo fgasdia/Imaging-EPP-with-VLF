@@ -326,7 +326,7 @@ function buildeppmaps(parameters; modelstepindex=1)
 
     buildbasemapfiles(scenario, basemapdir(), paths, mapproj; overwrite=false)
 
-    # NOTE TEMP: We're taking log, but we can potentially to a special log plot instead
+    # NOTE: We're taking log, but we can potentially to a special log plot instead
     fluxmap = Matrix{Float64}(undef, length(mapy), length(mapx))
     for i in eachindex(densexy_grid)
         flux = patch(densexy_grid[i]...)
@@ -409,7 +409,7 @@ function krigingmask(itp, paths, mapproj, mapx, mapy; pathstep=100e3, range=600e
     pts = maptrans.(parent(parent(mapxy)))
     problem = EstimationProblem(geox, PointSet(pts), :f)
     solution = solve(problem, solver)
-    # XXX This solution is broken - returning all NaN
+    # XXX BUG This solution is broken - returning all NaN
 
     varmap = Matrix{Float64}(undef, length(mapy), length(mapx))
     for i in eachindex(varmap, solution.f_variance)

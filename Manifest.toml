@@ -2,12 +2,12 @@
 
 julia_version = "1.9.2"
 manifest_format = "2.0"
-project_hash = "d22acd8b33417247280dd450f7b66bbf459c1b21"
+project_hash = "50a5dab744be5e1d6cb33781365235f1162cd7c0"
 
 [[deps.ADTypes]]
-git-tree-sha1 = "d68758475ff90600488eb975b5ac222709a7dd6f"
+git-tree-sha1 = "f2b16fe1a3491b295105cae080c2a5f77a842718"
 uuid = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
-version = "0.2.2"
+version = "0.2.3"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -710,9 +710,9 @@ version = "1.0.1"
 
 [[deps.GeoStats]]
 deps = ["CategoricalArrays", "Chain", "Dates", "DensityRatioEstimation", "Distances", "GeoClustering", "GeoStatsBase", "GeoStatsSolvers", "GeoTables", "KrigingEstimators", "LossFunctions", "Meshes", "PointPatterns", "Reexport", "Rotations", "ScientificTypes", "Statistics", "TableTransforms", "Tables", "Unitful", "Variography"]
-git-tree-sha1 = "aaac4418734c9de792ee4056a44e63c489e4bc15"
+git-tree-sha1 = "5509234849c722b1e33bd450575cf97641af2f6c"
 uuid = "dcc97b0b-8ce5-5539-9008-bb190f959ef6"
-version = "0.44.2"
+version = "0.44.3"
 
     [deps.GeoStats.extensions]
     GeoStatsMakieExt = "Makie"
@@ -734,9 +734,9 @@ version = "0.6.1"
 
 [[deps.GeoTables]]
 deps = ["DataAPI", "Meshes", "PrettyTables", "Random", "ScientificTypes", "Tables", "Unitful"]
-git-tree-sha1 = "cb8b2d46013890b197f0b1c5e140d50d6bb6afe1"
+git-tree-sha1 = "4685f856dd5befec578212f8c138e340fc53f1a9"
 uuid = "e502b557-6362-48c1-8219-d30d308dcdb0"
-version = "1.6.4"
+version = "1.6.5"
 
 [[deps.GeographicLib]]
 deps = ["StaticArrays"]
@@ -1638,12 +1638,6 @@ git-tree-sha1 = "81f7d934b52b2441f7b44520bd982fdb3607b0da"
 uuid = "76ed43ae-9a5d-5a62-8c75-30186b810ce8"
 version = "3.43.0+0"
 
-[[deps.SatelliteToolbox]]
-deps = ["Dates", "Reexport", "SatelliteToolboxAtmosphericModels", "SatelliteToolboxBase", "SatelliteToolboxCelestialBodies", "SatelliteToolboxGeomagneticField", "SatelliteToolboxGravityModels", "SatelliteToolboxPropagators", "SatelliteToolboxSgp4", "SatelliteToolboxTle", "SatelliteToolboxTransformations"]
-git-tree-sha1 = "ff31f30cdff20266c3e7dd4786fa9eaa5ca2ca36"
-uuid = "6ac157d9-b43d-51bb-8fab-48bf53814f4a"
-version = "0.12.0"
-
 [[deps.SatelliteToolboxAtmosphericModels]]
 deps = ["Accessors", "Crayons", "PolynomialRoots", "Printf", "Reexport", "SatelliteToolboxBase", "SatelliteToolboxCelestialBodies", "SatelliteToolboxLegendre", "SpaceIndices"]
 git-tree-sha1 = "ec25599402edb6fd0afd8e7e572e26c35494d9e9"
@@ -1668,34 +1662,10 @@ git-tree-sha1 = "8d0329074d41c692bd60b0a818304dda731405b7"
 uuid = "9fc549ba-b5d7-49a2-b268-8171e5fb6e89"
 version = "0.1.0"
 
-[[deps.SatelliteToolboxGravityModels]]
-deps = ["Crayons", "Dates", "Downloads", "ReferenceFrameRotations", "SatelliteToolboxBase", "SatelliteToolboxLegendre", "Scratch", "StaticArrays"]
-git-tree-sha1 = "a145726bc306d2d928b3069bda25b6ebccd0dea5"
-uuid = "bd9e9728-6f7b-4d28-9e50-c765cb1b7c8c"
-version = "0.1.2"
-
 [[deps.SatelliteToolboxLegendre]]
 git-tree-sha1 = "8151c3d6e18e6b1e0417960f5e44286b722e033a"
 uuid = "7fa26607-a272-47b2-9aa2-a6c1d419d9d2"
 version = "1.0.1"
-
-[[deps.SatelliteToolboxPropagators]]
-deps = ["Crayons", "Dates", "LinearAlgebra", "PrecompileTools", "Printf", "Reexport", "SatelliteToolboxBase", "SatelliteToolboxSgp4", "SatelliteToolboxTle", "StaticArrays"]
-git-tree-sha1 = "c45953b08d316432ddc168bc15df0a3a2f76518e"
-uuid = "c2b69894-ea78-4e2b-9ba6-cedbbc3d14d7"
-version = "0.3.0"
-
-[[deps.SatelliteToolboxSgp4]]
-deps = ["Crayons", "Dates", "LinearAlgebra", "PrecompileTools", "Printf", "Reexport", "SatelliteToolboxBase", "SatelliteToolboxTle", "StaticArrays"]
-git-tree-sha1 = "66b246e63b6e00a60861a55110361c263994fa17"
-uuid = "ba14ac17-bfc9-4710-a76f-b32930ef2339"
-version = "2.1.2"
-
-[[deps.SatelliteToolboxTle]]
-deps = ["Crayons", "Dates", "Downloads", "PrecompileTools", "Printf", "URIs"]
-git-tree-sha1 = "0bf1d32269942154d6289ac664e0e1b528eaf664"
-uuid = "7ff27aeb-5fff-4337-a9ee-a9fe6b7ed35e"
-version = "1.0.4"
 
 [[deps.SatelliteToolboxTransformations]]
 deps = ["Crayons", "Dates", "DelimitedFiles", "Downloads", "Interpolations", "LinearAlgebra", "Reexport", "ReferenceFrameRotations", "SatelliteToolboxBase", "Scratch", "StaticArrays"]
@@ -1953,9 +1923,9 @@ version = "0.11.2"
 
 [[deps.StringManipulation]]
 deps = ["PrecompileTools"]
-git-tree-sha1 = "5e13822b5907ccc18aa97cd89ed817756bbd2040"
+git-tree-sha1 = "a04cabe79c5f01f4d723cc6704070ada0b9d46d5"
 uuid = "892a3eda-7b42-436c-8928-eab12a02cf0e"
-version = "0.3.3"
+version = "0.3.4"
 
 [[deps.StructTypes]]
 deps = ["Dates", "UUIDs"]
@@ -1964,9 +1934,9 @@ uuid = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
 version = "1.10.0"
 
 [[deps.SubionosphericVLFInversionAlgorithms]]
-deps = ["AxisKeys", "Dates", "Distributions", "GeoStats", "GeographicLib", "ImageFiltering", "Interpolations", "LMPTools", "LibGEOS", "LinearAlgebra", "LongwaveModePropagator", "NLopt", "ProgressMeter", "Proj", "PropagationModelPrep", "Random", "SatelliteToolbox", "ScatteredInterpolation", "StaticArrays", "Statistics", "UnPack"]
-git-tree-sha1 = "7d247b20e7a8b2ee74db88a6dc02326a68d61121"
-repo-rev = "projupdate"
+deps = ["AxisKeys", "Dates", "Distributions", "GeoStats", "GeographicLib", "ImageFiltering", "Interpolations", "LMPTools", "LibGEOS", "LinearAlgebra", "LongwaveModePropagator", "NLopt", "ProgressMeter", "Proj", "PropagationModelPrep", "Random", "ScatteredInterpolation", "StaticArrays", "Statistics", "UnPack"]
+git-tree-sha1 = "87b19dd49ab2f1ff8dd229037b66fbc54613db77"
+repo-rev = "main"
 repo-url = "https://github.com/fgasdia/SubionosphericVLFInversionAlgorithms.jl"
 uuid = "0803ec96-7665-482a-9427-2785addca038"
 version = "0.0.13"
@@ -2005,9 +1975,9 @@ version = "1.0.1"
 
 [[deps.TableTransforms]]
 deps = ["AbstractTrees", "CategoricalArrays", "Distributions", "LinearAlgebra", "NelderMead", "PrettyTables", "Random", "ScientificTypes", "Statistics", "StatsBase", "Tables", "Transducers", "TransformsBase"]
-git-tree-sha1 = "532434aa3ca10f75809574221983fd99c70732f6"
+git-tree-sha1 = "559192e522f2000c52499924c77f2e117735be87"
 uuid = "0d432bfd-3ee1-4ac1-886a-39f05cc69a3e"
-version = "1.14.4"
+version = "1.14.5"
 
 [[deps.Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "OrderedCollections", "TableTraits", "Test"]
@@ -2096,11 +2066,6 @@ deps = ["Adapt", "Dictionaries", "Indexing", "SplitApplyCombine", "Tables", "Uni
 git-tree-sha1 = "d911ae4e642cf7d56b1165d29ef0a96ba3444ca9"
 uuid = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
 version = "1.4.3"
-
-[[deps.URIs]]
-git-tree-sha1 = "b7a5e99f24892b6824a954199a45e9ffcc1c70f0"
-uuid = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
-version = "1.5.0"
 
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
